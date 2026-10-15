@@ -1,7 +1,7 @@
 """
 График разброса найденных параметров (самих β, α, γ) по запускам.
 
-Запуск:  python plot_spread.py
+Запуск:  python -m seir.plot_spread
 Читает results.csv (его создаёт experiment.py), открывает график в отдельном окне
 (с панелью инструментов matplotlib внизу, как в main.py) и сохраняет fig_param_spread.png.
 
@@ -10,6 +10,8 @@
 Красная пунктирная линия = истинное значение. Точки за пределами шкалы
 прижаты к краю (красный треугольник) и подписаны.
 """
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -29,7 +31,8 @@ PARAMS = [("beta", "β", 0.65, (-0.4, 1.1)),
 STARTS = [("good", "Идеальное приближение\nначальных параметров"),
           ("bad", "Плохое приближение\nначальных параметров")]
 
-df = pd.read_csv("results.csv")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+df = pd.read_csv(PROJECT_ROOT / "results.csv")
 rng = np.random.default_rng(0)
 fig, axes = plt.subplots(2, 3, figsize=(20, 11))
 for i, (st, st_title) in enumerate(STARTS):
@@ -67,5 +70,5 @@ for i, (st, st_title) in enumerate(STARTS):
         if j == 0:
             ax.set_ylabel(st_title)
 plt.tight_layout()
-plt.savefig("fig_param_spread.png", dpi=200)
+plt.savefig(PROJECT_ROOT / "fig_param_spread.png", dpi=200)
 plt.show()

@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ import cma
 # ==========================================
 # 1. КОНФИГУРАЦИЯ
 # ==========================================
-FILE_NAME = 'volgograd05.csv'
+FILE_NAME = Path(__file__).resolve().parents[2] / 'volgograd05.csv'
 POPULATION_N = 2521200.0
 
 INITIAL_GUESS = [0.9, 0.9, 0.9]

@@ -17,7 +17,11 @@ dependencies = [
 ]
 
 [project.scripts]
-seir = "seir:main"
+seir = "seir.main:main"
+experiment = "seir.experiment:main"
+lotka-volterra = "seir.lotka_volterra:main"
+van-der-pol = "seir.van_der_pol:main"
+lorenz = "seir.lorenz:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]

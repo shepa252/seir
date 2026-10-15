@@ -5,11 +5,12 @@
 Нелдер-Мид: tol=1e-5; ДЭ: tol=1e-5; Optuna(TPE): 300 испытаний).
 
 Запуск:
-    python experiment.py                      # 20 запусков на каждый старт
-    python experiment.py --runs 5 --workers 1 # быстрый тест / честные замеры времени
-    python experiment.py --plot-only          # перерисовать графики из results.csv
+    python -m seir.experiment                      # 20 запусков на каждый старт
+    python -m seir.experiment --runs 5 --workers 1 # быстрый тест / честные замеры времени
+    python -m seir.experiment --plot-only          # перерисовать графики из results.csv
 """
 import argparse
+from pathlib import Path
 import time
 import warnings
 from concurrent.futures import ProcessPoolExecutor
@@ -23,11 +24,13 @@ import optuna
 import cma
 from scipy.optimize import minimize, differential_evolution
 
-from main import (run_simulation, loss_function, calculate_metrics, POPULATION_N, Y0,
+from .main import (run_simulation, loss_function, calculate_metrics, POPULATION_N, Y0,
                   TRUE_BETA, TRUE_ALPHA, TRUE_GAMMA, NOISE_STD, DAYS_DURATION,
                   BOUNDS, TOLERANCE, OPTUNA_TRIALS)
 
 warnings.filterwarnings("ignore")
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 TRUE = np.array([TRUE_BETA, TRUE_ALPHA, TRUE_GAMMA])
 TRUE_R0 = TRUE_BETA / TRUE_GAMMA
@@ -129,7 +132,7 @@ def summarize(df):
             row["time_med_s"] = g["time"].median()
             rows.append(row)
     s = pd.DataFrame(rows)
-    s.to_csv("summary.csv", index=False, float_format="%.3f")
+    s.to_csv(PROJECT_ROOT / "summary.csv", index=False, float_format="%.3f")
     with pd.option_context("display.width", 250, "display.max_columns", 30):
         print(s.round(2).to_string(index=False))
     return s
@@ -152,7 +155,7 @@ def plot(df):
                 ax.set_title(name, fontsize=14)
         axes[i, 0].set_ylabel(f"{title}\nОтносительная ошибка, %", fontsize=11)
     fig.tight_layout()
-    fig.savefig("fig_param_errors.png", dpi=300)
+    fig.savefig(PROJECT_ROOT / "fig_param_errors.png", dpi=300)
     print("Сохранено: fig_param_errors.png")
 
 
@@ -164,7 +167,7 @@ def main():
     a = ap.parse_args()
 
     if a.plot_only:
-        df = add_errors(pd.read_csv("results.csv"))
+        df = add_errors(pd.read_csv(PROJECT_ROOT / "results.csv"))
     else:
         tasks = [(st, s) for st in STARTS for s in range(a.runs)]
         t0 = time.time()
@@ -172,7 +175,7 @@ def main():
             rows = [r for chunk in ex.map(worker, tasks) for r in chunk]
         print(f"Готово за {time.time() - t0:.0f} с")
         df = pd.DataFrame(rows)
-        df.to_csv("results.csv", index=False)  # сырые результаты КАЖДОГО запуска
+        df.to_csv(PROJECT_ROOT / "results.csv", index=False)  # сырые результаты КАЖДОГО запуска
         df = add_errors(df)
     summarize(df)
     plot(df)
