@@ -1,0 +1,24 @@
+[project]
+name = "seir"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Matusha", email = "sgepelevmatv12@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "cma>=4.5.0",
+    "matplotlib>=3.11.2",
+    "optuna>=5.0.0",
+    "pandas>=3.0.6",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+]
+
+[project.scripts]
+seir = "seir:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
