@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 seir = "seir.main:main"
 experiment = "seir.experiment:main"
+lotka-experiment = "seir.lotka_experiment:main"
 lotka-volterra = "seir.lotka_volterra:main"
 van-der-pol = "seir.van_der_pol:main"
 lorenz = "seir.lorenz:main"
