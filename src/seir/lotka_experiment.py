@@ -16,15 +16,16 @@ from pathlib import Path
 import cma
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import LogFormatterMathtext, LogLocator
 
 plt.rcParams.update({
-    "font.family": "DejaVu Sans",
-    "font.size": 12,
-    "axes.titlesize": 14,
-    "axes.labelsize": 12,
-    "xtick.labelsize": 11,
-    "ytick.labelsize": 11,
-    "legend.fontsize": 11,
+    "font.family": "serif",
+    "font.size": 16,
+    "axes.titlesize": 16,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "legend.fontsize": 16,
     "figure.titlesize": 16,
 })
 import optuna
@@ -48,6 +49,8 @@ TOLERANCE = 1e-5
 METHODS = ("NM", "DE", "CMA", "BO")
 LABELS = {"NM": "Nelder–Mead", "DE": "Differential evolution",
           "CMA": "CMA-ES", "BO": "Optuna TPE"}
+DISPLAY_LABELS = {"NM": "Нелдер-Мид", "DE": "Дифференциальная эволюция",
+                  "CMA": "CMA-ES", "BO": "Байесовская оптимизация"}
 
 
 def run_simulation(parameters: np.ndarray | list[float]) -> np.ndarray:
@@ -83,7 +86,8 @@ def make_data(seed: int) -> tuple[np.ndarray, np.ndarray]:
 def fit(method: str, data: np.ndarray, seed: int, trials: int) -> tuple[np.ndarray, float, int, bool]:
     """Оценить параметры одним из четырёх методов."""
     start = time.perf_counter()
-    x0 = np.array([0.7, 0.18, 0.12, 2.1], dtype=float)
+    # x0 = np.array([0.7, 0.18, 0.12, 2.1], dtype=float) # Хорошее приближение
+    x0 = np.array([1.5, 0.2, 0.15, 2.0], dtype=float) # Плохое приближение
     bounds = BOUNDS
 
     if method == "NM":
@@ -181,9 +185,9 @@ def plot_trajectories(results: pd.DataFrame) -> None:
             parameters = [row["alpha"], row["beta"], row["delta"], row["gamma"]]
             prediction = run_simulation(parameters)
             axis.plot(TIME_GRID, prediction[:, index], color=color, linewidth=1.8,
-                      label=LABELS[method])
-        axis.set_ylabel(name)
-        axis.set_title(name, loc="left")
+                      label=DISPLAY_LABELS[method])
+        axis.set_ylabel("Численность")
+        axis.set_title(name, loc="left", fontweight="bold")
         axis.grid(True, linestyle="--", alpha=0.45)
 
     legend_handles, legend_labels = axes[0].get_legend_handles_labels()
@@ -197,11 +201,11 @@ def plot_trajectories(results: pd.DataFrame) -> None:
             for column, true in zip(error_columns, TRUE_PARAMETERS)
         ])
     error_image = table_axis.imshow(error_matrix, cmap="YlOrRd", aspect="auto")
-    table_axis.set_title("Ошибки восстановления, %", loc="left", pad=18)
+    table_axis.set_title("Матрица ошибок восстановления параметров", loc="left", pad=0, fontweight='bold')
     table_axis.set_xticks(range(len(error_columns)))
     table_axis.set_xticklabels(["α", "β", "δ", "γ"])
     table_axis.set_yticks(range(len(METHODS)))
-    table_axis.set_yticklabels(["Н-М", "ДЭ", "CMA-ES", "Optuna"])
+    table_axis.set_yticklabels(["Нелдер-\nМид", "Дифф.\nэволюция", "CMA-ES", "Байесов.\nоптимизация"])
     table_axis.tick_params(axis="y", pad=8)
     table_axis.set_xlabel("Параметр")
     table_axis.set_ylabel("Метод")
@@ -209,33 +213,45 @@ def plot_trajectories(results: pd.DataFrame) -> None:
         for column_index, value in enumerate(row):
             table_axis.text(column_index, row_index, f"{value:.2f}",
                             ha="center", va="center", color="black")
-    figure.colorbar(error_image, ax=table_axis, label="Ошибка, %", pad=0.04)
+    figure.colorbar(error_image, ax=table_axis, label="Относительная ошибка, %", pad=0.04)
 
     method_names = [LABELS[method] for method in METHODS]
     median_times = [
         float(results.loc[results["method"] == name, "time_s"].median())
         for name in method_names
     ]
-    time_axis.bar(method_names, median_times, color=colors)
+    axis_labels = [
+        "Нелдер-\nМид",
+        "Дифференциальная\nэволюция",
+        "CMA-ES",
+        "Байесовская\nоптимизация",
+    ]
+    time_axis.bar(range(len(method_names)), median_times, color=colors)
+    time_axis.set_xticks(range(len(method_names)))
+    time_axis.set_xticklabels(axis_labels)
     time_axis.set_yscale("log")
-    time_axis.set_title("Время работы алгоритмов", loc="left")
+    time_axis.set_ylim(bottom=0.1, top=100)
+    time_axis.yaxis.set_major_locator(LogLocator(base=10))
+    time_axis.yaxis.set_major_formatter(LogFormatterMathtext(base=10))
+    time_axis.set_title("Время работы алгоритмов", loc="left", fontweight='bold')
     time_axis.set_xlabel("Метод")
     time_axis.set_ylabel("Время, с")
     time_axis.grid(True, axis="y", linestyle="--", alpha=0.45)
-    time_axis.tick_params(axis="x", rotation=25)
+    time_axis.tick_params(axis="x", rotation=0)
     for index, value in enumerate(median_times):
         time_axis.text(index, value, f"{value:.2g}", ha="center", va="bottom", fontsize=11)
 
     figure.legend(legend_handles, legend_labels, loc="center left",
-                  ncol=3, fontsize=11, frameon=False)
+                  ncol=2, fontsize=16, frameon=True, fancybox=True)
 
     time_ticks = np.arange(0.0, TIME_GRID[-1] + 1.0, 5.0)
     for axis in axes:
         axis.set_xticks(time_ticks)
+        axis.set_xlim(TIME_GRID[0], TIME_GRID[-1])
         axis.tick_params(axis="x", labelbottom=True)
     axes[0].set_xlabel("Время")
     axes[-1].set_xlabel("Время")
-    figure.suptitle("Идентификация параметров модели Лотки—Вольтерры", fontsize=16)
+    figure.suptitle("Модель Лотка-Вольтерра", fontsize=20, fontweight='bold')
     plt.show()
 
 
